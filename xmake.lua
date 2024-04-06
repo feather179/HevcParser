@@ -15,7 +15,3 @@ target("HevcParser")
     add_includedirs("common")
     add_includedirs("reader")
     add_includedirs("decoder")
-    add_includedirs("D:/ProgramFiles/ffmpeg-6.1.1-full_build-shared/include")
-
-    add_linkdirs("D:/ProgramFiles/ffmpeg-6.1.1-full_build-shared/lib")
-    add_links("avformat", "avcodec")

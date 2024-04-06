@@ -12,11 +12,6 @@
 
 #include <assert.h>
 
-extern "C" {
-#include "libavformat/avformat.h"
-#include "libavcodec/avcodec.h"
-};
-
 using std::vector;
 
 // copy from ffmpeg libavformat/avc.c
@@ -59,6 +54,7 @@ const uint8_t *findStartcode(const uint8_t *p, const uint8_t *end) {
 HevcDecoder::HevcDecoder() {
     mSliceDecoder = std::make_shared<HevcSliceDecoder>();
     mFilter = std::make_shared<HevcFilter>();
+    mParamSet = std::make_shared<ParameterSet>();
 }
 
 std::shared_ptr<HevcFrame> HevcDecoder::getNewFrame(uint8_t tid) {
@@ -228,34 +224,68 @@ bool HevcDecoder::decode(const char *inputFilePath, const char *outputFilePath) 
     assert(inputFilePath != nullptr);
     assert(outputFilePath != nullptr);
 
+    FILE *pInputFile = nullptr;
+    if (!(pInputFile = fopen(inputFilePath, "rb"))) {
+        printf("Can not open input file:%s\n", outputFilePath);
+        return false;
+    }
+
     if (!(mOutputFile = fopen(outputFilePath, "wb"))) {
         printf("Can not open output file:%s\n", outputFilePath);
         return false;
     }
 
-    AVFormatContext *formatContext = nullptr;
-    AVPacket *packet = nullptr;
+#define BUFFER_SIZE (16 * 1024)
 
-    if (avformat_open_input(&formatContext, inputFilePath, nullptr, nullptr) < 0) {
-        printf("Can not open input file:%s\n", inputFilePath);
-        return false;
+    uint8_t *pBuffer = (uint8_t *)malloc(BUFFER_SIZE);
+    size_t readPosition = 0;
+    vector<uint8_t> nalu;
+
+    while (true) {
+        nalu.clear();
+        int readCount = 0;
+
+    READ_PACKET:
+        memset(pBuffer, 0, BUFFER_SIZE);
+        fseek(pInputFile, readPosition, SEEK_SET);
+        int readSize = fread(pBuffer, 1, BUFFER_SIZE, pInputFile);
+        readCount++;
+        if (readSize > 0) {
+            const uint8_t *pStart = pBuffer;
+            const uint8_t *pEnd = pBuffer + readSize;
+            const uint8_t *pNaluStart = nullptr;
+            const uint8_t *pNaluEnd = nullptr;
+            int i = 0;
+
+            if (readCount == 1) {
+                pNaluStart = findStartcode(pStart, pEnd);
+                while (pNaluStart && (pNaluStart < pEnd) && !*(pNaluStart++)) i++;
+                i++;
+                if (pNaluStart == pEnd) break;
+                pNaluEnd = findStartcode(pNaluStart, pEnd);
+            } else {
+                pNaluStart = pStart;
+                pNaluEnd = findStartcode(pNaluStart, pEnd);
+            }
+
+            if (pNaluEnd == pEnd && readSize == BUFFER_SIZE) {
+                nalu.insert(nalu.end(), pNaluStart, pNaluEnd - 4);
+                readPosition += (pNaluEnd - 4 - pNaluStart + i);
+                goto READ_PACKET;
+            } else {
+                nalu.insert(nalu.end(), pNaluStart, pNaluEnd);
+                readPosition += (pNaluEnd - pNaluStart + i);
+            }
+        } else
+            break;
+
+        printf("get nalu size:%zu\n", nalu.size());
+        decodeNalu(nalu);
     }
 
-    av_dump_format(formatContext, 0, inputFilePath, 0);
+    free(pBuffer);
 
-    packet = av_packet_alloc();
-    int index = 0;
-    while (av_read_frame(formatContext, packet) >= 0) {
-        printf("[frame #%d] stream:%d packet size:%d\n", index++, packet->stream_index, packet->size);
-        vector<uint8_t> buffer;
-        buffer.insert(buffer.end(), packet->data, packet->data + packet->size);
-        decodePacket(buffer);
-        av_packet_unref(packet);
-    }
-
-    avformat_close_input(&formatContext);
-    av_packet_free(&packet);
-
+    fclose(pInputFile);
     fclose(mOutputFile);
 
     return true;
