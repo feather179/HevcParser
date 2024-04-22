@@ -22,8 +22,8 @@ void HevcFrame::init(std::shared_ptr<ParameterSet> paramSet) {
     auto slice = std::make_shared<HevcSlice>(sliceHeader);
 
     mCtus.clear();
-    for (int i = 0; i < sps->ctbHeight; i++) {
-        for (int j = 0; j < sps->ctbWidth; j++) {
+    for (int i = 0; i < (int)sps->ctbHeight; i++) {
+        for (int j = 0; j < (int)sps->ctbWidth; j++) {
             int rsAddr = i * sps->ctbWidth + j;
             auto ctu =
                 std::make_shared<HevcCtu>(j << sps->log2CtbSize, i << sps->log2CtbSize, rsAddr, shared_from_this());
@@ -119,13 +119,13 @@ PointAddr HevcFrame::getTileAddr(int xAddr, int yAddr) {
 
     int tileX = 0, tileY = 0;
     for (int i = 0; i < (mPps->tileColumnBoundary.size() - 1); i++) {
-        if (x >= mPps->tileColumnBoundary[i] && x < mPps->tileColumnBoundary[i + 1]) {
+        if (x >= (int)mPps->tileColumnBoundary[i] && x < (int)mPps->tileColumnBoundary[i + 1]) {
             tileX = mPps->tileColumnBoundary[i];
             break;
         }
     }
     for (int i = 0; i < (mPps->tileRowBoundary.size() - 1); i++) {
-        if (y >= mPps->tileRowBoundary[i] && y < mPps->tileRowBoundary[i + 1]) {
+        if (y >= (int)mPps->tileRowBoundary[i] && y < (int)mPps->tileRowBoundary[i + 1]) {
             tileY = mPps->tileRowBoundary[i];
             break;
         }

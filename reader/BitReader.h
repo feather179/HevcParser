@@ -6,13 +6,13 @@
 class BitReader {
 private:
     const uint8_t *mpData;
-    size_t mSize;
+    uint32_t mSize;
     uint32_t mReservoir;
     uint32_t mNumBitsLeft;
     uint32_t mReadCount = 0;
 
     bool fillReservoir();
-    bool getBitsGraceful(size_t n, uint32_t *out);
+    bool getBitsGraceful(uint32_t n, uint32_t *out);
 
 public:
     BitReader(const uint8_t *data, uint32_t size);
@@ -20,14 +20,14 @@ public:
     BitReader &operator=(const BitReader &) = delete;
     virtual ~BitReader();
 
-    bool skipBits(size_t n);
-    size_t numBytesLeft() const;
-    size_t numBitsUntilByteAligned() const;
-    size_t numBytesRead() const;
+    bool skipBits(uint32_t n);
+    uint32_t numBytesLeft() const;
+    uint32_t numBitsUntilByteAligned() const;
+    uint32_t numBytesRead() const;
     const uint8_t *data() const;
 
-    uint32_t getUInt(size_t n);
-    int32_t getSInt(size_t n);
+    uint32_t getUInt(uint32_t n);
+    int32_t getSInt(uint32_t n);
     uint32_t getFlag();
     uint32_t getUVlc();
     int32_t getSVlc();

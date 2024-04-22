@@ -369,7 +369,7 @@ static const uint8_t gInitValues[3][HEVC_CONTEXTS] = {
 
 CabacReader::CabacReader() : BitReader(nullptr, 0) {}
 
-CabacReader::CabacReader(const vector<uint8_t> &data) : BitReader(data.data(), data.size()) {
+CabacReader::CabacReader(const vector<uint8_t> &data) : BitReader(data.data(), (uint32_t)data.size()) {
     mCurrRange = 510;
     mOffset = getUInt(9);
 }

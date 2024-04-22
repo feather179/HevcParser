@@ -18,11 +18,11 @@ using std::vector;
 
 static uint32_t ceilLog2(uint32_t value) {
     uint32_t ret = 0;
-    while (value > (1 << ret)) ret++;
+    while (value > (uint32_t)(1 << ret)) ret++;
     return ret;
 }
 
-CavlcReader::CavlcReader(const vector<uint8_t> &rbsp) : BitReader(rbsp.data(), rbsp.size()) {}
+CavlcReader::CavlcReader(const vector<uint8_t> &rbsp) : BitReader(rbsp.data(), (uint32_t)rbsp.size()) {}
 
 CavlcReader::~CavlcReader() {}
 
@@ -96,7 +96,7 @@ void CavlcReader::parseVps(shared_ptr<ParameterSet> ps) {
     vps->vps_num_layer_sets_minus1 = READ_UVLC("vps_num_layer_sets_minus1");
 
     vps->layer_id_included_flag.resize(vps->vps_num_layer_sets_minus1 + 1);
-    for (int i = 1; i <= vps->vps_num_layer_sets_minus1; i++) {
+    for (int i = 1; i <= (int)vps->vps_num_layer_sets_minus1; i++) {
         vps->layer_id_included_flag[i].resize(vps->vps_max_layer_id + 1);
         for (int j = 0; j <= vps->vps_max_layer_id; j++) {
             vps->layer_id_included_flag[i][j] = READ_FLAG("layer_id_included_flag[i][j]");
@@ -352,10 +352,10 @@ void CavlcReader::parsePps(shared_ptr<ParameterSet> ps) {
         pps->uniform_spacing_flag = READ_FLAG("uniform_spacing_flag");
         if (!pps->uniform_spacing_flag) {
             pps->column_width_minus1.resize(pps->num_tile_columns_minus1);
-            for (int i = 0; i < pps->num_tile_columns_minus1; i++)
+            for (int i = 0; i < (int)pps->num_tile_columns_minus1; i++)
                 pps->column_width_minus1[i] = READ_UVLC("column_width_minus1");
             pps->row_height_minus1.resize(pps->num_tile_rows_minus1);
-            for (int i = 0; i < pps->num_tile_rows_minus1; i++)
+            for (int i = 0; i < (int)pps->num_tile_rows_minus1; i++)
                 pps->row_height_minus1[i] = READ_UVLC("row_height_minus1");
         }
         pps->loop_filter_across_tiles_enabled_flag = READ_FLAG("loop_filter_across_tiles_enabled_flag");
@@ -408,8 +408,8 @@ void CavlcReader::parsePps(shared_ptr<ParameterSet> ps) {
     pps->log2MinCuQpDeltaSize = sps->log2CtbSize - pps->diff_cu_qp_delta_depth;
     pps->log2ParMrgLevel = pps->log2_parallel_merge_level_minus2 + 2;
 
-    uint32_t tileColumnCount = pps->num_tile_columns_minus1 + 1;
-    uint32_t tileRowCount = pps->num_tile_rows_minus1 + 1;
+    int tileColumnCount = (int)pps->num_tile_columns_minus1 + 1;
+    int tileRowCount = (int)pps->num_tile_rows_minus1 + 1;
     if (pps->uniform_spacing_flag) {
         for (int i = 0; i < tileColumnCount; i++) {
             uint32_t width = (i + 1) * sps->ctbWidth / tileColumnCount - i * sps->ctbWidth / tileColumnCount;
@@ -448,7 +448,7 @@ void CavlcReader::parsePps(shared_ptr<ParameterSet> ps) {
 
     pps->ctbAddrRsToTs.resize(sps->ctbCount);
     pps->ctbAddrTsToRs.resize(sps->ctbCount);
-    for (int rsAddr = 0; rsAddr < sps->ctbCount; rsAddr++) {
+    for (int rsAddr = 0; rsAddr < (int)sps->ctbCount; rsAddr++) {
         uint32_t tbX = rsAddr % sps->ctbWidth;
         uint32_t tbY = rsAddr / sps->ctbWidth;
         int tileX = tileColumnCount - 1;
@@ -468,8 +468,8 @@ void CavlcReader::parsePps(shared_ptr<ParameterSet> ps) {
     uint32_t tileIdx = 0;
     for (int j = 0; j < tileRowCount; j++) {
         for (int i = 0; i < tileColumnCount; i++, tileIdx++) {
-            for (int y = pps->tileRowBoundary[j]; y < pps->tileRowBoundary[j + 1]; y++) {
-                for (int x = pps->tileColumnBoundary[i]; x < pps->tileColumnBoundary[i + 1]; x++) {
+            for (int y = pps->tileRowBoundary[j]; y < (int)pps->tileRowBoundary[j + 1]; y++) {
+                for (int x = pps->tileColumnBoundary[i]; x < (int)pps->tileColumnBoundary[i + 1]; x++) {
                     pps->ctbTileId[pps->ctbAddrRsToTs[y * sps->ctbWidth + x]] = tileIdx;
                 }
             }
@@ -479,13 +479,13 @@ void CavlcReader::parsePps(shared_ptr<ParameterSet> ps) {
     pps->minTbWidth = sps->ctbWidth << (sps->log2CtbSize - sps->log2MinTbSize);
     pps->minTbHeight = sps->ctbHeight << (sps->log2CtbSize - sps->log2MinTbSize);
     pps->minTbAddrZs.resize(pps->minTbHeight, vector<uint32_t>(pps->minTbWidth, 0));
-    for (int y = 0; y < pps->minTbHeight; y++) {
-        for (int x = 0; x < pps->minTbWidth; x++) {
+    for (int y = 0; y < (int)pps->minTbHeight; y++) {
+        for (int x = 0; x < (int)pps->minTbWidth; x++) {
             uint32_t tbX = (x << sps->log2MinTbSize) >> sps->log2CtbSize;
             uint32_t tbY = (y << sps->log2MinTbSize) >> sps->log2CtbSize;
             pps->minTbAddrZs[y][x] = pps->ctbAddrRsToTs[sps->ctbWidth * tbY + tbX]
                                      << (2 * (sps->log2CtbSize - sps->log2MinTbSize));
-            for (int i = 0; i < (sps->log2CtbSize - sps->log2MinTbSize); i++) {
+            for (int i = 0; i < (int)(sps->log2CtbSize - sps->log2MinTbSize); i++) {
                 uint32_t m = 1 << i;
                 pps->minTbAddrZs[y][x] += m & x ? m * m : 0;
                 pps->minTbAddrZs[y][x] += m & y ? 2 * m * m : 0;
@@ -533,14 +533,14 @@ void CavlcReader::parseSliceHeader(shared_ptr<ParameterSet> ps, int prevTid0Poc,
         int numPicTotalCurr = 0;
         int poc = sliceHeader->poc, tid = mTid;
 
-        for (int i = 0; i < stRps->numNegativePics; i++) {
+        for (int i = 0; i < (int)stRps->numNegativePics; i++) {
             if (stRps->usedByCurrPicS0[i]) {
                 pocStCurrBefore.push_back(poc + stRps->deltaPocS0[i]);
                 numPicTotalCurr++;
             } else
                 pocStFoll.push_back(poc + stRps->deltaPocS0[i]);
         }
-        for (int i = 0; i < stRps->numPositivePics; i++) {
+        for (int i = 0; i < (int)stRps->numPositivePics; i++) {
             if (stRps->usedByCurrPicS1[i]) {
                 pocStCurrAfter.push_back(poc + stRps->deltaPocS1[i]);
                 numPicTotalCurr++;
@@ -548,9 +548,9 @@ void CavlcReader::parseSliceHeader(shared_ptr<ParameterSet> ps, int prevTid0Poc,
                 pocStFoll.push_back(poc + stRps->deltaPocS1[i]);
         }
 
-        numPocStCurrBefore = pocStCurrBefore.size();
-        numPocStCurrAfter = pocStCurrAfter.size();
-        numPocStFoll = pocStFoll.size();
+        numPocStCurrBefore = (int)pocStCurrBefore.size();
+        numPocStCurrAfter = (int)pocStCurrAfter.size();
+        numPocStFoll = (int)pocStFoll.size();
 
         vector<shared_ptr<HevcFrame>> refPicSetStCurrBefore(numPocStCurrBefore);
         vector<shared_ptr<HevcFrame>> refPicSetStCurrAfter(numPocStCurrAfter);
@@ -608,7 +608,7 @@ void CavlcReader::parseSliceHeader(shared_ptr<ParameterSet> ps, int prevTid0Poc,
                 }
             }
 
-            for (int i = 0; i <= sliceHeader->num_ref_idx_l0_active_minus1; i++)
+            for (int i = 0; i <= (int)sliceHeader->num_ref_idx_l0_active_minus1; i++)
                 sliceHeader->refPicList[0].push_back(refPicListTemp0[i]);
         }
 
@@ -628,7 +628,7 @@ void CavlcReader::parseSliceHeader(shared_ptr<ParameterSet> ps, int prevTid0Poc,
                 }
             }
 
-            for (int i = 0; i <= sliceHeader->num_ref_idx_l1_active_minus1; i++)
+            for (int i = 0; i <= (int)sliceHeader->num_ref_idx_l1_active_minus1; i++)
                 sliceHeader->refPicList[1].push_back(refPicListTemp1[i]);
         }
     };
@@ -721,7 +721,7 @@ void CavlcReader::parseSliceHeader(shared_ptr<ParameterSet> ps, int prevTid0Poc,
                         table->delta_chroma_log2_weight_denom = READ_SVLC("delta_chroma_log2_weight_denom");
 
                     table->luma_weight_l0_flag.resize(sliceHeader->num_ref_idx_l0_active_minus1 + 1, 0);
-                    for (int i = 0; i <= sliceHeader->num_ref_idx_l0_active_minus1; i++) {
+                    for (int i = 0; i <= (int)sliceHeader->num_ref_idx_l0_active_minus1; i++) {
                         if (sliceHeader->refPicList[0][i]->getTid() != mTid ||
                             sliceHeader->refPicList[0][i]->getPoc() != sliceHeader->poc)
                             table->luma_weight_l0_flag[i] = READ_FLAG("luma_weight_l0_flag[i]");
@@ -729,7 +729,7 @@ void CavlcReader::parseSliceHeader(shared_ptr<ParameterSet> ps, int prevTid0Poc,
 
                     if (sps->chromaArrayType) {
                         table->chroma_weight_l0_flag.resize(sliceHeader->num_ref_idx_l0_active_minus1 + 1, 0);
-                        for (int i = 0; i <= sliceHeader->num_ref_idx_l0_active_minus1; i++) {
+                        for (int i = 0; i <= (int)sliceHeader->num_ref_idx_l0_active_minus1; i++) {
                             if (sliceHeader->refPicList[0][i]->getTid() != mTid ||
                                 sliceHeader->refPicList[0][i]->getPoc() != sliceHeader->poc)
                                 table->chroma_weight_l0_flag[i] = READ_FLAG("chroma_weight_l0_flag[i]");
@@ -740,7 +740,7 @@ void CavlcReader::parseSliceHeader(shared_ptr<ParameterSet> ps, int prevTid0Poc,
 
                     if (sliceHeader->slice_type == B_SLICE) {
                         table->luma_weight_l1_flag.resize(sliceHeader->num_ref_idx_l1_active_minus1 + 1, 0);
-                        for (int i = 0; i <= sliceHeader->num_ref_idx_l1_active_minus1; i++) {
+                        for (int i = 0; i <= (int)sliceHeader->num_ref_idx_l1_active_minus1; i++) {
                             if (sliceHeader->refPicList[0][i]->getTid() != mTid ||
                                 sliceHeader->refPicList[1][i]->getPoc() != sliceHeader->poc)
                                 table->luma_weight_l1_flag[i] = READ_FLAG("luma_weight_l1_flag[i]");
@@ -748,7 +748,7 @@ void CavlcReader::parseSliceHeader(shared_ptr<ParameterSet> ps, int prevTid0Poc,
 
                         if (sps->chromaArrayType) {
                             table->chroma_weight_l1_flag.resize(sliceHeader->num_ref_idx_l1_active_minus1 + 1, 0);
-                            for (int i = 0; i <= sliceHeader->num_ref_idx_l1_active_minus1; i++) {
+                            for (int i = 0; i <= (int)sliceHeader->num_ref_idx_l1_active_minus1; i++) {
                                 if (sliceHeader->refPicList[0][i]->getTid() != mTid ||
                                     sliceHeader->refPicList[1][i]->getPoc() != sliceHeader->poc)
                                     table->chroma_weight_l1_flag[i] = READ_FLAG("chroma_weight_l1_flag[i]");
@@ -796,7 +796,7 @@ void CavlcReader::parseSliceHeader(shared_ptr<ParameterSet> ps, int prevTid0Poc,
             sliceHeader->offset_len_minus1 = READ_UVLC("offset_len_minus1");
             uint8_t bits = sliceHeader->offset_len_minus1 + 1;
             sliceHeader->entry_point_offset_minus1.resize(sliceHeader->num_entry_point_offsets);
-            for (int i = 0; i < sliceHeader->num_entry_point_offsets; i++)
+            for (int i = 0; i < (int)sliceHeader->num_entry_point_offsets; i++)
                 sliceHeader->entry_point_offset_minus1[i] = READ_CODE(bits, "entry_point_offset_minus1[i]");
         }
     }
@@ -805,7 +805,7 @@ void CavlcReader::parseSliceHeader(shared_ptr<ParameterSet> ps, int prevTid0Poc,
         sliceHeader->slice_segment_header_extension_length = READ_UVLC("slice_segment_header_extension_length");
         sliceHeader->slice_segment_header_extension_data_byte.resize(
             sliceHeader->slice_segment_header_extension_length);
-        for (int i = 0; i < sliceHeader->slice_segment_header_extension_length; i++)
+        for (int i = 0; i < (int)sliceHeader->slice_segment_header_extension_length; i++)
             sliceHeader->slice_segment_header_extension_data_byte[i] =
                 READ_CODE(8, "slice_segment_header_extension_data_byte[i]");
     }
@@ -910,14 +910,14 @@ void CavlcReader::parseStRps(HevcStRefPicSet *stRps, int stRpsIdx, int numStRps)
 
         stRps->delta_poc_s0_minus1.resize(stRps->num_negative_pics);
         stRps->used_by_curr_pic_s0_flag.resize(stRps->num_negative_pics);
-        for (int i = 0; i < stRps->num_negative_pics; i++) {
+        for (int i = 0; i < (int)stRps->num_negative_pics; i++) {
             stRps->delta_poc_s0_minus1[i] = READ_UVLC("delta_poc_s0_minus1[i]");
             stRps->used_by_curr_pic_s0_flag[i] = READ_FLAG("used_by_curr_pic_s0_flag[i]");
         }
 
         stRps->delta_poc_s1_minus1.resize(stRps->num_positive_pics);
         stRps->used_by_curr_pic_s1_flag.resize(stRps->num_positive_pics);
-        for (int i = 0; i < stRps->num_positive_pics; i++) {
+        for (int i = 0; i < (int)stRps->num_positive_pics; i++) {
             stRps->delta_poc_s1_minus1[i] = READ_UVLC("delta_poc_s1_minus1[i]");
             stRps->used_by_curr_pic_s1_flag[i] = READ_FLAG("used_by_curr_pic_s1_flag[i]");
         }
@@ -930,17 +930,17 @@ void CavlcReader::parseStRps(HevcStRefPicSet *stRps, int stRpsIdx, int numStRps)
 
     stRps->usedByCurrPicS0.resize(stRps->numNegativePics);
     stRps->deltaPocS0.resize(stRps->numNegativePics);
-    for (int i = 0; i < stRps->numNegativePics; i++) {
+    for (int i = 0; i < (int)stRps->numNegativePics; i++) {
         stRps->usedByCurrPicS0[i] = stRps->used_by_curr_pic_s0_flag[i];
         if (i == 0)
-            stRps->deltaPocS0[i] = -(stRps->delta_poc_s0_minus1[i] + 1);
+            stRps->deltaPocS0[i] = -(int)(stRps->delta_poc_s0_minus1[i] + 1);
         else
             stRps->deltaPocS0[i] = stRps->deltaPocS0[i - 1] - (stRps->delta_poc_s0_minus1[i] + 1);
     }
 
     stRps->usedByCurrPicS1.resize(stRps->numPositivePics);
     stRps->deltaPocS1.resize(stRps->numPositivePics);
-    for (int i = 0; i < stRps->numPositivePics; i++) {
+    for (int i = 0; i < (int)stRps->numPositivePics; i++) {
         stRps->usedByCurrPicS1[i] = stRps->used_by_curr_pic_s1_flag[i];
         if (i == 0)
             stRps->deltaPocS1[i] = (stRps->delta_poc_s1_minus1[i] + 1);

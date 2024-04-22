@@ -2,8 +2,7 @@
 
 #include <cmath>
 
-BitReader::BitReader(const uint8_t *data, uint32_t size)
-    : mpData(data), mSize(size), mReservoir(0), mNumBitsLeft(0) {}
+BitReader::BitReader(const uint8_t *data, uint32_t size) : mpData(data), mSize(size), mReservoir(0), mNumBitsLeft(0) {}
 
 BitReader::~BitReader() {}
 
@@ -24,7 +23,7 @@ bool BitReader::fillReservoir() {
     return true;
 }
 
-bool BitReader::getBitsGraceful(size_t n, uint32_t *out) {
+bool BitReader::getBitsGraceful(uint32_t n, uint32_t *out) {
     if (n > 32) return false;
 
     uint32_t ret = 0;
@@ -32,7 +31,7 @@ bool BitReader::getBitsGraceful(size_t n, uint32_t *out) {
         if (mNumBitsLeft == 0)
             if (!fillReservoir()) return false;
 
-        size_t m = n;
+        uint32_t m = n;
         if (m > mNumBitsLeft) m = mNumBitsLeft;
         ret = (ret << m) | (mReservoir >> (32 - m));
         mReservoir <<= m;
@@ -44,7 +43,7 @@ bool BitReader::getBitsGraceful(size_t n, uint32_t *out) {
     return true;
 }
 
-bool BitReader::skipBits(size_t n) {
+bool BitReader::skipBits(uint32_t n) {
     uint32_t ret;
     while (n > 32) {
         if (!getBitsGraceful(32, &ret)) return false;
@@ -56,15 +55,15 @@ bool BitReader::skipBits(size_t n) {
     return true;
 }
 
-size_t BitReader::numBytesLeft() const {
+uint32_t BitReader::numBytesLeft() const {
     return mSize + ((mNumBitsLeft + 7) >> 3);
 }
 
-size_t BitReader::numBitsUntilByteAligned() const {
+uint32_t BitReader::numBitsUntilByteAligned() const {
     return mNumBitsLeft & 0x07;
 }
 
-size_t BitReader::numBytesRead() const {
+uint32_t BitReader::numBytesRead() const {
     return mReadCount - ((mNumBitsLeft + 7) >> 3);
 }
 
@@ -72,13 +71,13 @@ const uint8_t *BitReader::data() const {
     return mpData - ((mNumBitsLeft + 7) >> 3);
 }
 
-uint32_t BitReader::getUInt(size_t n) {
+uint32_t BitReader::getUInt(uint32_t n) {
     uint32_t ret = 0;
     getBitsGraceful(n, &ret);
     return ret;
 }
 
-int32_t BitReader::getSInt(size_t n) {
+int32_t BitReader::getSInt(uint32_t n) {
     uint32_t value = 0;
     int32_t ret = 0;
 

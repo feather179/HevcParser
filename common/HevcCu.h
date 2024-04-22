@@ -76,7 +76,7 @@ public:
     void copyResidual(std::shared_ptr<HevcTu> tu);
 
     void addPu(std::shared_ptr<HevcPu> pu) { mPus.push_back(pu); }
-    int getPuCount() { return mPus.size(); }
+    int getPuCount() { return (int)mPus.size(); }
     std::shared_ptr<HevcPu> getPu(int xAddr, int yAddr);
     std::shared_ptr<HevcPu> getPu(int index) { return mPus[index]; }
     uint8_t getMergeFlag(int xAddr, int yAddr);

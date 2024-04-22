@@ -528,8 +528,8 @@ void HevcFilter::sao(shared_ptr<HevcCtu> ctu, int cIdx) {
             height = height / subHeightC;
         }
 
-        if (x + width > saoPicture[0].size()) width = saoPicture[0].size() - x;
-        if (y + height > saoPicture.size()) height = saoPicture.size() - y;
+        if (x + width > saoPicture[0].size()) width = (int)saoPicture[0].size() - x;
+        if (y + height > saoPicture.size()) height = (int)saoPicture.size() - y;
 
         for (int j = 0; j < height; j++) {
             for (int i = 0; i < width; i++) saoPicture[y + j][x + i] = recPicture[y + j][x + i];
@@ -600,7 +600,7 @@ void HevcFilter::sao(shared_ptr<HevcCtu> ctu, int cIdx) {
         int log2Size = cu->getLog2Size();
         int log2MinTbSize = sps->log2MinTbSize;
         int maxValue = (1 << bitDepth) - 1;
-        int frameWidth = saoPicture[0].size(), frameHeight = saoPicture.size();
+        int frameWidth = (int)saoPicture[0].size(), frameHeight = (int)saoPicture.size();
         int x = cu->getX(), y = cu->getY();
         int width = 1 << log2Size, height = 1 << log2Size;
         if (cIdx > 0) {

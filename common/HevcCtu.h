@@ -34,7 +34,7 @@ public:
     int getX() { return mXAddr; }
     int getY() { return mYAddr; }
     int getLog2Size() { return mLog2Size; }
-    int getCuCount() { return mCus.size(); }
+    int getCuCount() { return (int)mCus.size(); }
     int getRsAddr() { return mRsAddr; }
     void setSliceRsAddr(int addr) { mSliceRsAddr = addr; }
     int getSliceRsAddr() { return mSliceRsAddr; }

@@ -8,12 +8,14 @@ using std::vector;
 
 HevcCu::HevcCu(int xAddr, int yAddr, int indexInCtu, int log2Size, int depth)
     : mXAddr(xAddr), mYAddr(yAddr), mIndexInCtu(indexInCtu), mLog2Size(log2Size), mDepth(depth) {
-    mPredY.resize(1 << log2Size, vector<uint16_t>(1 << log2Size, 0));
-    mPredCb.resize(1 << log2Size, vector<uint16_t>(1 << log2Size, 0));
-    mPredCr.resize(1 << log2Size, vector<uint16_t>(1 << log2Size, 0));
-    mResidualY.resize(1 << log2Size, vector<int>(1 << log2Size, 0));
-    mResidualCb.resize(1 << log2Size, vector<int>(1 << log2Size, 0));
-    mResidualCr.resize(1 << log2Size, vector<int>(1 << log2Size, 0));
+    int nCbs = 1 << log2Size;
+
+    mPredY.resize(nCbs, vector<uint16_t>(nCbs, 0));
+    mPredCb.resize(nCbs, vector<uint16_t>(nCbs, 0));
+    mPredCr.resize(nCbs, vector<uint16_t>(nCbs, 0));
+    mResidualY.resize(nCbs, vector<int>(nCbs, 0));
+    mResidualCb.resize(nCbs, vector<int>(nCbs, 0));
+    mResidualCr.resize(nCbs, vector<int>(nCbs, 0));
 }
 
 void HevcCu::setIntraPredModeY(int blkIdx, IntraPredMode mode) {

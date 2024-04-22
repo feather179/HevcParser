@@ -22,7 +22,7 @@ bool HevcCuDecoder::checkNbBlockAvail(shared_ptr<HevcFrame> frame, int xAddr, in
     auto pps = frame->getPps();
 
     if (xNb < 0 || yNb < 0) return false;
-    if (xNb >= sps->width || yNb >= sps->height) return false;
+    if (xNb >= (int)sps->width || yNb >= (int)sps->height) return false;
 
     uint32_t minBlockAddr = pps->minTbAddrZs[yAddr >> sps->log2MinTbSize][xAddr >> sps->log2MinTbSize];
     uint32_t minBlockAddrNb = pps->minTbAddrZs[yNb >> sps->log2MinTbSize][xNb >> sps->log2MinTbSize];
@@ -550,9 +550,9 @@ void HevcCuDecoder::decodeCodingQuadtree(shared_ptr<HevcCtu> ctu, int x0, int y0
     int nCbS = 1 << log2CtuSize;
     bool splitCuFlag = false;
 
-    if (x0 >= sps->width || y0 >= sps->height) return;
+    if (x0 >= (int)sps->width || y0 >= (int)sps->height) return;
 
-    if ((x0 + nCbS <= sps->width) && (y0 + nCbS <= sps->height) && log2CtuSize > sps->log2MinCtbSize) {
+    if ((x0 + nCbS <= (int)sps->width) && (y0 + nCbS <= (int)sps->height) && log2CtuSize > (int)sps->log2MinCtbSize) {
         bool leftAvail = checkNbBlockAvail(frame, x0, y0, x0 - 1, y0);
         bool aboveAvail = checkNbBlockAvail(frame, x0, y0, x0, y0 - 1);
         int inc = 0;
@@ -561,13 +561,13 @@ void HevcCuDecoder::decodeCodingQuadtree(shared_ptr<HevcCtu> ctu, int x0, int y0
         if (aboveAvail && (frame->getCtDepth(x0, y0 - 1) > depth)) inc++;
         splitCuFlag = mCabacReader->parseSplitCuFlag(inc);
     } else {
-        if (log2CtuSize > sps->log2MinCtbSize)
+        if (log2CtuSize > (int)sps->log2MinCtbSize)
             splitCuFlag = true;
         else
             splitCuFlag = false;
     }
 
-    if (pps->cu_qp_delta_enabled_flag && log2CtuSize >= pps->log2MinCuQpDeltaSize) {
+    if (pps->cu_qp_delta_enabled_flag && log2CtuSize >= (int)pps->log2MinCuQpDeltaSize) {
         // ctu->setIsCuQpDeltaCoded(x0, y0, 0);
         // ctu->setCuQpDeltaVal(x0, y0, 0);
         ctu->setIsCuQpDeltaCoded(0);
@@ -1030,7 +1030,7 @@ void HevcCuDecoder::decodePredictionUnit(
                 int noBackwardPredFlag = 1;
                 for (int i = 0; (i < 2) && noBackwardPredFlag; i++) {
                     for (auto refPic : sliceHeader->refPicList[i]) {
-                        if (refPic->getPoc() > sliceHeader->poc) {
+                        if (refPic->getPoc() > (int)sliceHeader->poc) {
                             noBackwardPredFlag = 0;
                             break;
                         }
@@ -1071,7 +1071,8 @@ void HevcCuDecoder::decodePredictionUnit(
         int xColBr = xPb + nPbW;
         int yColBr = yPb + nPbH;
 
-        if ((yPb >> sps->log2CtbSize) == (yColBr >> sps->log2CtbSize) && yColBr < sps->height && xColBr < sps->width) {
+        if ((yPb >> sps->log2CtbSize) == (yColBr >> sps->log2CtbSize) && yColBr < (int)sps->height &&
+            xColBr < (int)sps->width) {
             int xColPb = (xColBr >> 4) << 4;
             int yColPb = (yColBr >> 4) << 4;
             available = getCollocatedMv(xColPb, yColPb, refIdxLX, X, mvLX);
@@ -1354,9 +1355,9 @@ void HevcCuDecoder::decodePredictionUnit(
                 1, 0, 2, 0, 2, 1, 3, 0, 3, 1, 3, 2,
             };
 
-            int numCurrMergeCand = mergeCandList.size();
-            int numOrigMergeCand = mergeCandList.size();
-            int numInputMergeCand = mergeCandList.size();
+            int numCurrMergeCand = (int)mergeCandList.size();
+            int numOrigMergeCand = (int)mergeCandList.size();
+            int numInputMergeCand = (int)mergeCandList.size();
             int combIdx = 0;
             while (true) {
                 int l0CandIdx = l0CandIdxTab[combIdx], l1CandIdx = l1CandIdxTab[combIdx];
@@ -1391,8 +1392,7 @@ void HevcCuDecoder::decodePredictionUnit(
 
         // append zero motion vector candidates
         if (mergeCandList.size() < sliceHeader->maxNumMergeCand) {
-            int numCurrMergeCand = mergeCandList.size();
-            // int numInputMergeCand = mergeCandList.size();
+            int numCurrMergeCand = (int)mergeCandList.size();
             int zeroIdx = 0;
             int numRefIdx;
             if (sliceHeader->slice_type == P_SLICE)
@@ -1402,9 +1402,6 @@ void HevcCuDecoder::decodePredictionUnit(
                                      sliceHeader->num_ref_idx_l1_active_minus1 + 1);
 
             while (true) {
-                // int m = numCurrMergeCand - numInputMergeCand;
-                // auto &zeroCand = mergeCandList[m];
-                // mergeCandList.push_back(zeroCand);
                 MvField zeroCand;
 
                 zeroCand.refIdxLX[0] = (zeroIdx < numRefIdx) ? zeroIdx : 0;
@@ -1421,7 +1418,7 @@ void HevcCuDecoder::decodePredictionUnit(
                 numCurrMergeCand++;
                 zeroIdx++;
 
-                if (numCurrMergeCand >= sliceHeader->maxNumMergeCand) break;
+                if (numCurrMergeCand >= (int)sliceHeader->maxNumMergeCand) break;
             }
         }
 
@@ -1534,14 +1531,14 @@ void HevcCuDecoder::decodeTransformTree(shared_ptr<HevcCtu> ctu,
 
     auto tu = std::make_shared<HevcTu>(x0, y0, log2TrafoSize, trafoDepth);
 
-    if (log2TrafoSize <= sps->log2MaxTbSize && log2TrafoSize > sps->log2MinTbSize && trafoDepth < maxTrafoDepth &&
-        !(intraSplitFlag && (trafoDepth == 0)))
+    if (log2TrafoSize <= (int)sps->log2MaxTbSize && log2TrafoSize > (int)sps->log2MinTbSize &&
+        trafoDepth < maxTrafoDepth && !(intraSplitFlag && (trafoDepth == 0)))
         splitTransformFlag = mCabacReader->parseSplitTransformFlag(5 - log2TrafoSize);
     else {
         bool interSplitFlag = sps->max_transform_hierarchy_depth_inter == 0 && cu->getPredMode() == PRED_MODE_INTER &&
                               cu->getPartMode() != PART_MODE_2Nx2N && trafoDepth == 0;
         splitTransformFlag =
-            log2TrafoSize > sps->log2MaxTbSize || (intraSplitFlag && trafoDepth == 0) || interSplitFlag;
+            log2TrafoSize > (int)sps->log2MaxTbSize || (intraSplitFlag && trafoDepth == 0) || interSplitFlag;
     }
 
     tu->setSplitTransformFlag(splitTransformFlag);
@@ -1791,7 +1788,7 @@ void HevcCuDecoder::decodeResidualCoding(shared_ptr<HevcCtu> ctu,
     }
 
     if (pps->transform_skip_enabled_flag && !cu->getCuTransquantBypassFlag() &&
-        (log2TrafoSize <= pps->log2MaxTransformSkipSize))
+        (log2TrafoSize <= (int)pps->log2MaxTransformSkipSize))
         tu->setTransformSkipFlag(cIdx, mCabacReader->parseTransformSkipFlag());
     else
         tu->setTransformSkipFlag(cIdx, false);

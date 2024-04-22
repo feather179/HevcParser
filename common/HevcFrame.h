@@ -46,7 +46,7 @@ public:
     int getPoc() { return mPoc; }
     void setTid(int tid) { mTid = tid; }
     int getTid() { return mTid; }
-    int getCtuCount() { return mCtus.size(); }
+    int getCtuCount() { return (int)mCtus.size(); }
     void setUsedForReference(bool usedForReference) { mUsedForReference = usedForReference; }
     bool getUsedForReference() { return mUsedForReference; }
     void init(std::shared_ptr<ParameterSet> paramSet);

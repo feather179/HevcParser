@@ -1,3 +1,5 @@
+#define _CRT_SECURE_NO_WARNINGS  // disable warning for fopen
+
 #include "HevcDecoder.h"
 
 #include "ParameterSet.h"
@@ -195,24 +197,24 @@ void HevcDecoder::decodeNalu(vector<uint8_t> &nalu) {
         mFilter->sao(mCurrFrame);
 
         if (mOutputFile) {
-            int height = mCurrFrame->mSaoY.size();
-            int width = mCurrFrame->mSaoY[0].size();
+            int height = (int)mCurrFrame->mSaoY.size();
+            int width = (int)mCurrFrame->mSaoY[0].size();
             uint8_t *buffer = (uint8_t *)malloc(width * height);
             int index = 0;
             for (int j = 0; j < height; j++)
-                for (int i = 0; i < width; i++) buffer[index++] = mCurrFrame->mSaoY[j][i];
+                for (int i = 0; i < width; i++) buffer[index++] = (uint8_t)mCurrFrame->mSaoY[j][i];
             fwrite(buffer, 1, width * height, mOutputFile);
 
-            height = mCurrFrame->mSaoCb.size();
-            width = mCurrFrame->mSaoCb[0].size();
+            height = (int)mCurrFrame->mSaoCb.size();
+            width = (int)mCurrFrame->mSaoCb[0].size();
             index = 0;
             for (int j = 0; j < height; j++)
-                for (int i = 0; i < width; i++) buffer[index++] = mCurrFrame->mSaoCb[j][i];
+                for (int i = 0; i < width; i++) buffer[index++] = (uint8_t)mCurrFrame->mSaoCb[j][i];
             fwrite(buffer, 1, width * height, mOutputFile);
 
             index = 0;
             for (int j = 0; j < height; j++)
-                for (int i = 0; i < width; i++) buffer[index++] = mCurrFrame->mSaoCr[j][i];
+                for (int i = 0; i < width; i++) buffer[index++] = (uint8_t)mCurrFrame->mSaoCr[j][i];
             fwrite(buffer, 1, width * height, mOutputFile);
 
             fflush(mOutputFile);
@@ -238,7 +240,7 @@ bool HevcDecoder::decode(const char *inputFilePath, const char *outputFilePath) 
 #define BUFFER_SIZE (16 * 1024)
 
     uint8_t *pBuffer = (uint8_t *)malloc(BUFFER_SIZE);
-    size_t readPosition = 0;
+    long readPosition = 0;
     vector<uint8_t> nalu;
 
     while (true) {
@@ -248,7 +250,7 @@ bool HevcDecoder::decode(const char *inputFilePath, const char *outputFilePath) 
     READ_PACKET:
         memset(pBuffer, 0, BUFFER_SIZE);
         fseek(pInputFile, readPosition, SEEK_SET);
-        int readSize = fread(pBuffer, 1, BUFFER_SIZE, pInputFile);
+        int readSize = (int)fread(pBuffer, 1, BUFFER_SIZE, pInputFile);
         readCount++;
         if (readSize > 0) {
             const uint8_t *pStart = pBuffer;
@@ -270,11 +272,11 @@ bool HevcDecoder::decode(const char *inputFilePath, const char *outputFilePath) 
 
             if (pNaluEnd == pEnd && readSize == BUFFER_SIZE) {
                 nalu.insert(nalu.end(), pNaluStart, pNaluEnd - 4);
-                readPosition += (pNaluEnd - 4 - pNaluStart + i);
+                readPosition += (long)(pNaluEnd - 4 - pNaluStart + i);
                 goto READ_PACKET;
             } else {
                 nalu.insert(nalu.end(), pNaluStart, pNaluEnd);
-                readPosition += (pNaluEnd - pNaluStart + i);
+                readPosition += (long)(pNaluEnd - pNaluStart + i);
             }
         } else
             break;
